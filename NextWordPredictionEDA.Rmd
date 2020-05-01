@@ -1,0 +1,125 @@
+---
+title: "Next Word Prediction data analysis"
+author: "Avnish"
+date: "15/04/2020"
+output: html_document
+---
+
+# Preparing N-grams and EDA for Next word prediction.
+
+## Reading required Package
+```{r,message=FALSE,warning=FALSE,cache=TRUE}
+library(tidyverse)
+library(quanteda)
+library(textclean)
+library(stringr)
+library(ngram)
+library(tm)
+
+```
+
+## Reading Data
+```{r,message=FALSE,warning=FALSE,cache=TRUE}
+blog=readLines("Coursera-SwiftKey/final/en_US/en_US.blogs.txt",encoding = "UTF-8")
+news=readLines("Coursera-SwiftKey/final/en_US/en_US.news.txt",encoding = "UTF-8")
+twitt=readLines("Coursera-SwiftKey/final/en_US/en_US.twitter.txt",encoding = "UTF-8",skipNul = TRUE)
+
+
+```
+
+## Trying with 1 % of data from Each file
+```{r,message=FALSE,warning=FALSE,cache=TRUE}
+
+y=round(0.01*length(news))
+news=sample(news,y)
+x=round(0.01*length(blog))
+blog=sample(blog,x)
+z=round(0.01*length(twitt))
+tweet=sample(twitt,z)
+combine=c(blog,news,twitt)
+
+```
+
+
+## Preaparing Corpus
+```{r,message=FALSE,warning=FALSE,cache=TRUE}
+
+combine=replace_contraction(combine,contraction.key = lexicon::key_contractions,ignore.case = TRUE)
+corpus=corpus(combine)
+
+```
+
+# Preparing Token
+```{r,message=FALSE,warning=FALSE,cache=TRUE}
+tokens=tokens(corpus,
+                   what = "word",
+                   remove_numbers = TRUE,
+                   remove_punct = TRUE,
+                   remove_symbols = TRUE,
+                   remove_hyphens = TRUE,
+                   remove_url = TRUE,
+                   remove_twitter=TRUE
+)
+
+
+```
+
+## Preparing Unigram, bigram and Trigram
+```{r,message=FALSE,warning=FALSE,cache=TRUE}
+
+tokens=tokens_select(tokens,stopwords(), selection = "remove")
+tokens=tokens_tolower(tokens)
+unigram=tokens_ngrams(tokens,n=1,concatenator = " ")
+bigram=tokens_ngrams(tokens,n=2,concatenator = " ")
+trigram=tokens_ngrams(tokens,n=3,concatenator = " ")
+unigram=dfm(unigram,tolower = FALSE)
+bigram=dfm(bigram,tolower = FALSE)
+trigram=dfm(trigram,tolower = FALSE)
+
+```
+
+## Frequencies for Each unigram, bigram and Trigram
+```{r,message=FALSE,warning=FALSE,cache=TRUE}
+a=textstat_frequency(unigram)[,1:2]
+b=textstat_frequency(bigram)[,1:2]
+c=textstat_frequency(trigram)[,1:2]
+
+```
+
+## Filtering out rare unigram,bigram and trigram
+```{r,message=FALSE,warning=FALSE,cache=TRUE}
+a=a%>%filter(frequency>3)
+b=b%>%filter(frequency>4)
+c=c%>%filter(frequency>4)
+
+```
+
+
+## Most occuring Unigram
+```{r,message=FALSE,warning=FALSE,cache=TRUE}
+g1=a[1:50,1:2]%>%ggplot(aes(x=feature,y=frequency))+geom_bar(fill = "#0073C2FF", stat = "identity")+theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+g1
+```
+
+## Most occuring bigram
+```{r,message=FALSE,warning=FALSE,cache=TRUE}
+g2=b[1:50,1:2]%>%ggplot(aes(x=feature,y=frequency))+geom_bar(fill = "#0073C2FF", stat = "identity")+theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+g2
+```
+
+## Most occuring trigram
+```{r,message=FALSE,warning=FALSE,cache=TRUE}
+g3=c[1:50,1:2]%>%ggplot(aes(x=feature,y=frequency))+geom_bar(fill = "#0073C2FF", stat = "identity")+theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+g3
+```
+
+## Saving Data 
+```{r,message=FALSE,warning=FALSE,cache=TRUE}
+saveRDS(a,"unigram.data")
+saveRDS(b,"bigram.data")
+saveRDS(c,"trigram.data")
+
+```
+
+# Going Forward
+Will create next word prediction model by using N-gram model utilizing backoff .
